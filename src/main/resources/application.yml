@@ -1,0 +1,12 @@
+bot:
+  name: ${BOT_NAME}
+  token: ${BOT_TOKEN}
+
+logging:
+  level:
+    root: INFO
+    gpb.itfactory.productadvisortelegrambot.bot.config: ERROR
+    gpb.itfactory.productadvisortelegrambot.bot.handler: INFO
+  file:
+    name: bot.log
+    path: /
