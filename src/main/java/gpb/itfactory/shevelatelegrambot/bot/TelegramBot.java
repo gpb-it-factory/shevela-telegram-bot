@@ -39,10 +39,10 @@ public class TelegramBot extends TelegramLongPollingBot {
         if(update.hasMessage() && update.getMessage().hasText() && command.startsWith("/")) {
             log.info("Received command: " + command + " From chat № " + chatId);
             sendMessage(dispatcher.doDispatch(update));
-        } else {
-            log.warn("Received unknown message: " + command);
-            sendMessage(new SendMessage(String.valueOf(chatId), UNKNOWN_MESSAGE));
+            return;
         }
+        log.warn("Received unknown message: " + command);
+        sendMessage(new SendMessage(String.valueOf(chatId), UNKNOWN_MESSAGE));
     }
 
     private void sendMessage(SendMessage sendMessage) {
