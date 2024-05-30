@@ -22,7 +22,7 @@ public class UpdateDispatcher {
     public SendMessage doDispatch(Update update) {
         String command = update.getMessage().getText();
         long chatId = update.getMessage().getChatId();
-        return getHandlerByCommand(command).handle(chatId);
+        return getHandlerByCommand(command).handle(update);
     }
 
     private CommandHandler getHandlerByCommand(String command) {
