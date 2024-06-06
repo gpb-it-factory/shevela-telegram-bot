@@ -2,22 +2,22 @@ package gpb.itfactory.shevelatelegrambot.bot.handler;
 
 import gpb.itfactory.shevelatelegrambot.service.UserService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-/* Обработчик команды /ping */
+/* Обработчик команды /isregister */
 
 @Slf4j
 @Component
 public class IsRegisterCommandHandler implements CommandHandler{
 
-    @Autowired
-    private UserService userService;
-
     private static final String COMMAND = "/isregister";
-    private static final String ANSWER = "pong";
+    private final UserService userService;
+
+    public IsRegisterCommandHandler(UserService userService) {
+        this.userService = userService;
+    }
 
     @Override
     public SendMessage handle(Update update) {

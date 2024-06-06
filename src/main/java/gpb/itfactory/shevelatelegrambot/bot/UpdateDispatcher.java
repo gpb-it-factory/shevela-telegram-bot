@@ -21,7 +21,6 @@ public class UpdateDispatcher {
 
     public SendMessage doDispatch(Update update) {
         String command = update.getMessage().getText();
-        long chatId = update.getMessage().getChatId();
         return getHandlerByCommand(command).handle(update);
     }
 
