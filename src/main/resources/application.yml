@@ -7,3 +7,7 @@ logging:
     root: INFO
     gpb.itfactory.productadvisortelegrambot.bot.config: ERROR
     gpb.itfactory.productadvisortelegrambot.bot.handler: INFO
+
+middle:
+  service:
+    url: http://localhost:8081/middle/users
