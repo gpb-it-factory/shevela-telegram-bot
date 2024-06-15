@@ -2,7 +2,7 @@ package gpb.itfactory.shevelatelegrambot.integration.handler;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import gpb.itfactory.shevelatelegrambot.bot.handler.RegisterCommandHandler;
-import gpb.itfactory.shevelatelegrambot.integration.CreateUserMock;
+import gpb.itfactory.shevelatelegrambot.integration.mocks.UserMock;
 import gpb.itfactory.shevelatelegrambot.integration.WireMockConfig;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,8 +18,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-
-import java.io.IOException;
+import org.telegram.telegrambots.meta.api.objects.User;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -30,9 +29,8 @@ public class RegisterCommandHandlerIT {
 
     private final WireMockServer wireMockServer;
     private final RegisterCommandHandler registerCommandHandler;
-    Chat chat;
-    Message message;
-    Update update;
+    private Chat chat;
+    private Update update;
 
     @Autowired
     RegisterCommandHandlerIT(WireMockServer wireMockServer, RegisterCommandHandler registerCommandHandler) {
@@ -44,16 +42,19 @@ public class RegisterCommandHandlerIT {
     void setUp(){
         chat = new Chat(123L, "test");
         chat.setUserName("test");
-        message = new Message();
+        Message message = new Message();
         message.setChat(chat);
         message.setText("/register");
+        User user = new User();
+        user.setId(123456L);
+        message.setFrom(user);
         update = new Update();
         update.setMessage(message);
     }
 
     @Test
-    void handleIfRegisterSuccess() throws IOException {
-        CreateUserMock.setupCreateUserResponseSuccess(wireMockServer);
+    void handleIfRegisterSuccess() {
+        UserMock.setupCreateUserResponseSuccess(wireMockServer);
 
         SendMessage actualResult = registerCommandHandler.handle(update);
 
@@ -61,8 +62,8 @@ public class RegisterCommandHandlerIT {
     }
 
     @Test
-    void handleIfRegisterFail() throws IOException {
-        CreateUserMock.setupCreateUserResponseFail(wireMockServer);
+    void handleIfRegisterFail() {
+        UserMock.setupCreateUserResponseFail(wireMockServer);
 
         SendMessage actualResult = registerCommandHandler.handle(update);
 

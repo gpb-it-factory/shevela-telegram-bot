@@ -32,7 +32,7 @@ public class IsRegisterCommandHandler implements CommandHandler{
     }
 
     private String getAnswer(Update update) {
-        String username = update.getMessage().getChat().getUserName();
-        return userService.findUserByUsername(username);
+        Long tgUserId = update.getMessage().getFrom().getId();
+        return userService.getUserByTelegramIdV2(tgUserId);
     }
 }

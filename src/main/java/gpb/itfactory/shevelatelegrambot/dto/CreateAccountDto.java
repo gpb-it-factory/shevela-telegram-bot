@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class UserDto {
-    private String username;
-    private Long tgUserId;
+public class CreateAccountDto {
+    private String accountName;
 }

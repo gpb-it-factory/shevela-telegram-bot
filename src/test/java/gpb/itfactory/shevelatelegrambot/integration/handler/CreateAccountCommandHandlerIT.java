@@ -1,9 +1,9 @@
 package gpb.itfactory.shevelatelegrambot.integration.handler;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
-import gpb.itfactory.shevelatelegrambot.bot.handler.IsRegisterCommandHandler;
-import gpb.itfactory.shevelatelegrambot.integration.mocks.UserMock;
+import gpb.itfactory.shevelatelegrambot.bot.handler.CreateAccountCommandHandler;
 import gpb.itfactory.shevelatelegrambot.integration.WireMockConfig;
+import gpb.itfactory.shevelatelegrambot.integration.mocks.AccountMock;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,22 +25,21 @@ import org.telegram.telegrambots.meta.api.objects.User;
 @EnableConfigurationProperties
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = { WireMockConfig.class })
-public class IsRegisterCommandHandlerIT {
+public class CreateAccountCommandHandlerIT {
 
     private final WireMockServer wireMockServer;
-    private final IsRegisterCommandHandler isRegisterCommandHandler;
-    private Chat chat;
+    private final CreateAccountCommandHandler createAccountCommandHandler;
     private Update update;
 
     @Autowired
-    IsRegisterCommandHandlerIT(WireMockServer wireMockServer, IsRegisterCommandHandler isRegisterCommandHandler) {
+    public CreateAccountCommandHandlerIT(WireMockServer wireMockServer, CreateAccountCommandHandler createAccountCommandHandler) {
         this.wireMockServer = wireMockServer;
-        this.isRegisterCommandHandler = isRegisterCommandHandler;
+        this.createAccountCommandHandler = createAccountCommandHandler;
     }
 
     @BeforeEach
     void setUp(){
-        chat = new Chat(123L, "test");
+        Chat chat = new Chat(123L, "test");
         chat.setUserName("test");
         Message message = new Message();
         message.setChat(chat);
@@ -53,21 +52,20 @@ public class IsRegisterCommandHandlerIT {
     }
 
     @Test
-    void handleIfIsRegisterSuccess() {
-        UserMock.setupGetUserByTelegramIdResponseSuccess(wireMockServer);
+    void handleIfCreateAccountSuccess() {
+        AccountMock.setupCreateUserAccountResponseSuccess(wireMockServer);
 
-        SendMessage actualResult = isRegisterCommandHandler.handle(update);
+        SendMessage actualResult = createAccountCommandHandler.handle(update);
 
-        Assertions.assertThat(actualResult.getText()).isEqualTo( "User %s is registered".formatted(chat.getUserName()));
+        Assertions.assertThat(actualResult.getText()).isEqualTo("Account test has been successfully created");
     }
 
     @Test
-    void handleIfIsRegisterFail() {
-        UserMock.setupGetUserByTelegramIdResponseFail(wireMockServer);
+    void handleIfCreateAccountFail() {
+        AccountMock.setupCreateUserAccountResponseFail(wireMockServer);
 
-        SendMessage actualResult = isRegisterCommandHandler.handle(update);
+        SendMessage actualResult = createAccountCommandHandler.handle(update);
 
         Assertions.assertThat(actualResult.getText()).startsWith("Error");
     }
-
 }

@@ -35,9 +35,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         try {
-            execute(buildResponseMessage(update));
-            log.info("Send message: " + buildResponseMessage(update).getText()
-                    + " To chat № " + buildResponseMessage(update).getChatId());
+            SendMessage responseMessage = buildResponseMessage(update);
+            execute(responseMessage);
+            log.info("Send message: " + responseMessage.getText()
+                    + " To chat № " + responseMessage.getChatId());
         } catch (TelegramApiException e) {
             log.error(e.getMessage());
         }

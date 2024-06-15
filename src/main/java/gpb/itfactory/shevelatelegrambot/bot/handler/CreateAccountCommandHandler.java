@@ -1,23 +1,23 @@
 package gpb.itfactory.shevelatelegrambot.bot.handler;
 
-import gpb.itfactory.shevelatelegrambot.dto.UserDto;
-import gpb.itfactory.shevelatelegrambot.service.UserService;
+import gpb.itfactory.shevelatelegrambot.dto.CreateAccountDto;
+import gpb.itfactory.shevelatelegrambot.service.AccountService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-/* Обработчик команды /register */
+/* Обработчик команды /createaccount */
 
 @Slf4j
 @Component
-public class RegisterCommandHandler implements CommandHandler{
+public class CreateAccountCommandHandler implements CommandHandler{
 
-    private static final String COMMAND = "/register";
-    private final UserService userService;
+    private static final String COMMAND = "/createaccount";
+    private final AccountService accountService;
 
-    public RegisterCommandHandler(UserService userService) {
-        this.userService = userService;
+    public CreateAccountCommandHandler(AccountService accountService) {
+        this.accountService = accountService;
     }
 
     @Override
@@ -33,9 +33,9 @@ public class RegisterCommandHandler implements CommandHandler{
     }
 
     private String getAnswer(Update update) {
-        String username = update.getMessage().getChat().getUserName();
+        String accountName = "My first awesome account";
         Long tgUserId = update.getMessage().getFrom().getId();
-        UserDto userDto = UserDto.builder().username(username).tgUserId(tgUserId).build();
-        return userService.createUserV2(userDto);
+        CreateAccountDto createAccountDto = CreateAccountDto.builder().accountName(accountName).build();
+        return accountService.createUserAccountV2(tgUserId, createAccountDto);
     }
 }

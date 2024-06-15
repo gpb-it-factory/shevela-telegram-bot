@@ -1,6 +1,7 @@
 package gpb.itfactory.shevelatelegrambot.service;
 
-import gpb.itfactory.shevelatelegrambot.dto.UserDto;
+
+import gpb.itfactory.shevelatelegrambot.dto.CreateAccountDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -10,22 +11,23 @@ import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Component
-public class UserService {
-
+public class AccountService {
     @Value("${middle.service.url}")
-    private String URL;
+    private String BASE_URL;
 
     private final RestTemplate restTemplate;
-    public UserService(RestTemplate restTemplate) {
+
+    public AccountService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
-    public String createUserV2(UserDto userDto){
+    public String createUserAccountV2(Long tgUserId, CreateAccountDto createAccountDto){
         String exception;
-        log.info("Create request to MiddleService: < register new user >");
+        log.info("Create request to MiddleService: < create account >");
         try {
-            ResponseEntity<String> responseEntity = restTemplate.postForEntity(URL, userDto, String.class);
-            log.info("Receive response from Middle Service: < register new user >");
+            String url = BASE_URL + "/" + tgUserId + "/accounts";
+            ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, createAccountDto, String.class);
+            log.info("Receive response from Middle Service: < create account >");
             return responseEntity.getBody();
         } catch (RestClientException restClientException) {
             exception = restClientException.toString();
@@ -35,12 +37,13 @@ public class UserService {
         return "Error: " + exception;
     }
 
-    public String getUserByTelegramIdV2(Long tgUserId){
+    public String getUserAccountsV2(Long tgUserId){
         String exception;
-        log.info("Create request to MiddleService: < get user by userId >");
+        log.info("Create request to MiddleService: < get accounts >");
         try {
-            String response = restTemplate.getForObject(URL + "/" + tgUserId, String.class);
-            log.info("Receive response from Middle Service: < get user by userId >");
+            String url = BASE_URL + "/" + tgUserId + "/accounts";
+            String response = restTemplate.getForObject(url, String.class);
+            log.info("Receive response from Middle Service: < get accounts >");
             return response;
         } catch (RestClientException restClientException) {
             exception = restClientException.toString();

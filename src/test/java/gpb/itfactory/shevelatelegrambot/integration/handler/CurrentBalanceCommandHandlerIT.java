@@ -1,9 +1,9 @@
 package gpb.itfactory.shevelatelegrambot.integration.handler;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
-import gpb.itfactory.shevelatelegrambot.bot.handler.IsRegisterCommandHandler;
-import gpb.itfactory.shevelatelegrambot.integration.mocks.UserMock;
+import gpb.itfactory.shevelatelegrambot.bot.handler.CurrentBalanceCommandHandler;
 import gpb.itfactory.shevelatelegrambot.integration.WireMockConfig;
+import gpb.itfactory.shevelatelegrambot.integration.mocks.AccountMock;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,22 +25,21 @@ import org.telegram.telegrambots.meta.api.objects.User;
 @EnableConfigurationProperties
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = { WireMockConfig.class })
-public class IsRegisterCommandHandlerIT {
+public class CurrentBalanceCommandHandlerIT {
 
     private final WireMockServer wireMockServer;
-    private final IsRegisterCommandHandler isRegisterCommandHandler;
-    private Chat chat;
+    private final CurrentBalanceCommandHandler currentBalanceCommandHandler;
     private Update update;
 
     @Autowired
-    IsRegisterCommandHandlerIT(WireMockServer wireMockServer, IsRegisterCommandHandler isRegisterCommandHandler) {
+    public CurrentBalanceCommandHandlerIT(WireMockServer wireMockServer, CurrentBalanceCommandHandler currentBalanceCommandHandler) {
         this.wireMockServer = wireMockServer;
-        this.isRegisterCommandHandler = isRegisterCommandHandler;
+        this.currentBalanceCommandHandler = currentBalanceCommandHandler;
     }
 
     @BeforeEach
     void setUp(){
-        chat = new Chat(123L, "test");
+        Chat chat = new Chat(123L, "test");
         chat.setUserName("test");
         Message message = new Message();
         message.setChat(chat);
@@ -53,21 +52,20 @@ public class IsRegisterCommandHandlerIT {
     }
 
     @Test
-    void handleIfIsRegisterSuccess() {
-        UserMock.setupGetUserByTelegramIdResponseSuccess(wireMockServer);
+    void handleIfGetUserAccountsSuccess() {
+        AccountMock.setupGetUserAccountsResponseSuccess(wireMockServer);
 
-        SendMessage actualResult = isRegisterCommandHandler.handle(update);
+        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
 
-        Assertions.assertThat(actualResult.getText()).isEqualTo( "User %s is registered".formatted(chat.getUserName()));
+        Assertions.assertThat(actualResult.getText()).isEqualTo("User has open account");
     }
 
     @Test
-    void handleIfIsRegisterFail() {
-        UserMock.setupGetUserByTelegramIdResponseFail(wireMockServer);
+    void handleIfGetUserAccountsFail() {
+        AccountMock.setupGetUserAccountsResponseFail(wireMockServer);
 
-        SendMessage actualResult = isRegisterCommandHandler.handle(update);
+        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
 
         Assertions.assertThat(actualResult.getText()).startsWith("Error");
     }
-
 }
