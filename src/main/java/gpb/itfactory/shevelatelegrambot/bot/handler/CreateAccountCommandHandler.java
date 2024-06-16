@@ -33,7 +33,7 @@ public class CreateAccountCommandHandler implements CommandHandler{
     }
 
     private String getAnswer(Update update) {
-        String accountName = "My first awesome account";
+        String accountName = "Акционный";
         Long tgUserId = update.getMessage().getFrom().getId();
         CreateAccountDto createAccountDto = CreateAccountDto.builder().accountName(accountName).build();
         return accountService.createUserAccountV2(tgUserId, createAccountDto);

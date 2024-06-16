@@ -21,6 +21,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
 @SpringBootTest
+@ActiveProfiles("test")
+@EnableConfigurationProperties
 @ContextConfiguration(classes = { WireMockConfig.class })
 public class CurrentBalanceCommandHandlerIT {
 

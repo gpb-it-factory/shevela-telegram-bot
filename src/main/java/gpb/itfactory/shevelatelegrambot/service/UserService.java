@@ -3,7 +3,6 @@ package gpb.itfactory.shevelatelegrambot.service;
 import gpb.itfactory.shevelatelegrambot.dto.UserDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
@@ -11,7 +10,6 @@ import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Component
-@PropertySource("classpath:application.yml")
 public class UserService {
 
     @Value("${middle.service.url}")

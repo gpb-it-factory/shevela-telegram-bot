@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 /* Конфигурационный класс для хранения botUsername & botToken */
 
 @Component
-@PropertySource("classpath:application.yml")
 @ConfigurationProperties(prefix = "bot")
 @Data
 public class BotConfig {
