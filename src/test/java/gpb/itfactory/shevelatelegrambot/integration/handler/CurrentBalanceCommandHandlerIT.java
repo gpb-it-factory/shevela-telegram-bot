@@ -7,13 +7,11 @@ import gpb.itfactory.shevelatelegrambot.integration.mocks.AccountMock;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -31,7 +29,8 @@ public class CurrentBalanceCommandHandlerIT {
     private Update update;
 
     @Autowired
-    public CurrentBalanceCommandHandlerIT(WireMockServer wireMockServer, CurrentBalanceCommandHandler currentBalanceCommandHandler) {
+    public CurrentBalanceCommandHandlerIT(WireMockServer wireMockServer,
+                                          CurrentBalanceCommandHandler currentBalanceCommandHandler) {
         this.wireMockServer = wireMockServer;
         this.currentBalanceCommandHandler = currentBalanceCommandHandler;
     }
@@ -51,20 +50,80 @@ public class CurrentBalanceCommandHandlerIT {
     }
 
     @Test
-    void handleIfGetUserAccountsSuccess() {
+    void getUserAccountsSuccess() {
         AccountMock.setupGetUserAccountsResponseSuccess(wireMockServer);
 
         SendMessage actualResult = currentBalanceCommandHandler.handle(update);
 
-        Assertions.assertThat(actualResult.getText()).isEqualTo("User has open account");
+        Assertions.assertThat(actualResult.getText()).startsWith("User has open account");
     }
 
     @Test
-    void handleIfGetUserAccountsFail() {
-        AccountMock.setupGetUserAccountsResponseFail(wireMockServer);
+    void getUserAccountsIfResponseNoAccounts() {
+        AccountMock.setupGetUserAccountsResponseIfNoAccount(wireMockServer);
 
         SendMessage actualResult = currentBalanceCommandHandler.handle(update);
 
-        Assertions.assertThat(actualResult.getText()).startsWith("Error");
+        Assertions.assertThat(actualResult.getText()).isEqualTo(
+                "Error << User does not have account in the MiniBank >>");
     }
+
+    @Test
+    void getUserAccountsIfResponseUserNotPresent() {
+        AccountMock.setupGetUserAccountsResponseIfUserNotPresent(wireMockServer);
+
+        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
+
+        Assertions.assertThat(actualResult.getText()).isEqualTo("User is not registered in the MiniBank");
+    }
+
+    @Test
+    void getUserAccountsIfGetUserAccountsServerError() {
+        AccountMock.setupGetUserAccountsResponseIfServerError(wireMockServer);
+
+        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
+
+        Assertions.assertThat(actualResult.getText()).isEqualTo(
+                "Error << Internal Backend server error when account verification >>");
+    }
+
+    @Test
+    void getUserAccountsIfNoConnection() {
+        AccountMock.setupGetUserAccountsResponseIfNoConnection(wireMockServer);
+
+        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
+
+        Assertions.assertThat(actualResult.getText()).startsWith("Middle service unknown or connection error");
+    }
+
+    @Test
+    void getUserAccountIfGetUserAccountsRequestNoConnection() {
+        AccountMock.setupGetUserAccountResponseIfGetAccountsResponseNoConnection(wireMockServer);
+
+        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
+
+        Assertions.assertThat(actualResult.getText()).isEqualTo(
+                "Error << Backend server unknown or connection error when account verification >>");
+    }
+
+    @Test
+    void getUserAccountIfGetUserRequestServerError() {
+        AccountMock.setupGetUserAccountResponseIfGetUserByTelegramIdResponseFail(wireMockServer);
+
+        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
+
+        Assertions.assertThat(actualResult.getText()).isEqualTo(
+                "Error << Internal Backend server error when verifying user registration >>");
+    }
+
+    @Test
+    void getUserAccountIfGetUserRequestNoConnection() {
+        AccountMock.setupGetUserAccountResponseIfGetUserByTelegramIdRequestNoConnection(wireMockServer);
+
+        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
+
+        Assertions.assertThat(actualResult.getText()).isEqualTo(
+                "Error << Backend server unknown or connection error when registration verification >>");
+    }
+
 }

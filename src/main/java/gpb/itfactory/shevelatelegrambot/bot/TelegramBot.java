@@ -4,6 +4,8 @@ package gpb.itfactory.shevelatelegrambot.bot;
 import gpb.itfactory.shevelatelegrambot.bot.config.BotConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -14,6 +16,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
  * путем наследования от класса org.telegram.telegrambots.bots.TelegramLongPollingBot */
 
 @Slf4j
+@ConditionalOnProperty(value="botConfig", havingValue="production")
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
 

@@ -1,55 +1,135 @@
 package gpb.itfactory.shevelatelegrambot.service;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import gpb.itfactory.shevelatelegrambot.dto.CreateAccountDto;
+import gpb.itfactory.shevelatelegrambot.dto.ErrorDto;
+import gpb.itfactory.shevelatelegrambot.entity.Account;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
 
 @Slf4j
 @Component
 public class AccountService {
-    @Value("${middle.service.url}")
-    private String BASE_URL;
 
+    private final String BASE_URL;
     private final RestTemplate restTemplate;
 
-    public AccountService(RestTemplate restTemplate) {
+    public AccountService(@Value("${middle.service.url}") String baseUrl, RestTemplate restTemplate) {
+        BASE_URL = baseUrl;
         this.restTemplate = restTemplate;
     }
 
-    public String createUserAccountV2(Long tgUserId, CreateAccountDto createAccountDto){
-        String exception;
+    public String createUserAccountV2(Long tgUserId, CreateAccountDto createAccountDto) {
         log.info("Create request to MiddleService: < create account >");
         try {
-            String url = BASE_URL + "/" + tgUserId + "/accounts";
+            String url = BASE_URL + "/users/" + tgUserId + "/accounts";
             ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, createAccountDto, String.class);
             log.info("Receive response from Middle Service: < create account >");
+            if (responseEntity.getStatusCode() == HttpStatus.NO_CONTENT) {
+                return "Account has been successfully created";
+            } else if (responseEntity.getStatusCode() == HttpStatus.OK) {
+                return "Account is already open. %s".formatted(buildSuccessResponseToGetUserAccountsV2(responseEntity));
+            }
             return responseEntity.getBody();
-        } catch (RestClientException restClientException) {
-            exception = restClientException.toString();
-            log.error(exception);
+        } catch (HttpServerErrorException exception) {
+            log.info("Receive response from Middle Service: < create account > >  %s"
+                    .formatted(exception.toString()));
+            return handleHttpServerErrorException(exception);
+        } catch (HttpClientErrorException exception) {
+            log.info("Receive response from Middle Service: < create account >  %s"
+                    .formatted(exception.toString()));
+            return handleHttpClientErrorException(exception);
+        } catch (RestClientException exception) {
+            log.info("Receive response from Middle Service: < create account > RestClientException  %s"
+                    .formatted(exception.toString()));
+            return "Middle service unknown or connection error: " + exception;
         }
-        log.error("Error: " + exception);
-        return "Error: " + exception;
     }
 
-    public String getUserAccountsV2(Long tgUserId){
-        String exception;
+    public String getUserAccountsV2(Long tgUserId) {
         log.info("Create request to MiddleService: < get accounts >");
         try {
-            String url = BASE_URL + "/" + tgUserId + "/accounts";
-            String response = restTemplate.getForObject(url, String.class);
-            log.info("Receive response from Middle Service: < get accounts >");
-            return response;
-        } catch (RestClientException restClientException) {
-            exception = restClientException.toString();
-            log.error(exception);
+            String url = BASE_URL + "/users/" + tgUserId + "/accounts";
+            ResponseEntity<String> responseEntity = restTemplate.getForEntity(url, String.class);
+            log.info("Receive response from Middle Service: < get accounts %s: ".formatted(responseEntity.getBody()));
+            if (responseEntity.getStatusCode() == HttpStatus.OK) {
+                return buildSuccessResponseToGetUserAccountsV2(responseEntity);
+            }
+            return responseEntity.getBody();
+        } catch (HttpServerErrorException exception) {
+            log.info("Receive response from Middle Service: < get user accounts > >  %s"
+                    .formatted(exception.toString()));
+            return handleHttpServerErrorException(exception);
+        } catch (HttpClientErrorException exception) {
+            log.info("Receive response from Middle Service: < get user accounts >  %s"
+                    .formatted(exception.toString()));
+            return handleHttpClientErrorException(exception);
+        } catch (RestClientException exception) {
+            log.info("Receive response from Middle Service: < get user accounts > RestClientException  %s"
+                    .formatted(exception.toString()));
+            return "Middle service unknown or connection error: " + exception;
         }
-        log.error("Error: " + exception);
-        return "Error: " + exception;
+    }
+
+    private String buildSuccessResponseToGetUserAccountsV2(ResponseEntity<String> responseEntity) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<Account> accounts = objectMapper.readValue(responseEntity.getBody(), new TypeReference<>() {});
+            log.info("Receive response from BackendService: < get accounts > - Accounts: %s"
+                    .formatted(accounts.toString()));
+            Account account = accounts.get(0);
+            return "User has open account: %s, amount: %s".formatted(account.getAccountName(), account.getAmount());
+        }  catch (JsonProcessingException exception) {
+            log.info("Receive response from Middle Service: < get user account > JsonProcessingException  %s"
+                    .formatted(exception.toString()));
+            return "Error: " + exception;
+        }
+    }
+
+    private String handleHttpServerErrorException(HttpServerErrorException exception) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            ErrorDto errorDto = mapper.readValue(exception.getResponseBodyAs(String.class), ErrorDto.class);
+            return switch (errorDto.getCode()) {
+                case ("103") -> "Error << Internal Backend server error when verifying user registration >>";
+                case ("113") -> "Error << Backend server unknown or connection error when registration verification >>";
+                case ("203") -> "Error << Internal Backend server error when account verification >>";
+                case ("213") -> "Error << Backend server unknown or connection error when account verification >>";
+                case ("200") -> "Error << Internal Backend server error when create account >>";
+                case ("210") -> "Error << Backend server unknown or connection error when create account >>";
+                default -> "Error << Unknown error >>";
+            };
+        } catch (JsonProcessingException e) {
+            log.info("Receive response from Middle Service: < get user accounts > JsonProcessingException  %s"
+                    .formatted(exception.toString()));
+            return "Error: " + exception;
+        }
+    }
+
+    private String handleHttpClientErrorException(HttpClientErrorException exception) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            ErrorDto errorDto = mapper.readValue(exception.getResponseBodyAs(String.class), ErrorDto.class);
+            if (errorDto.getCode().equals("101")) {
+                return "User is not registered in the MiniBank";
+            }
+            return "Error << User does not have account in the MiniBank >>";
+        } catch (JsonProcessingException e) {
+            log.info("Receive response from Middle Service: < get user accounts > JsonProcessingException  %s"
+                    .formatted(exception.toString()));
+            return "Error: " + exception;
+        }
     }
 }

@@ -7,13 +7,11 @@ import gpb.itfactory.shevelatelegrambot.integration.WireMockConfig;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -24,7 +22,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 @ActiveProfiles("test")
 @EnableConfigurationProperties
 @ContextConfiguration(classes = { WireMockConfig.class })
-public class RegisterCommandHandlerIT {
+class RegisterCommandHandlerIT {
 
     private final WireMockServer wireMockServer;
     private final RegisterCommandHandler registerCommandHandler;
@@ -52,20 +50,50 @@ public class RegisterCommandHandlerIT {
     }
 
     @Test
-    void handleIfRegisterSuccess() {
+    void createUserResponseSuccess() {
         UserMock.setupCreateUserResponseSuccess(wireMockServer);
 
         SendMessage actualResult = registerCommandHandler.handle(update);
 
-        Assertions.assertThat(actualResult.getText()).isEqualTo("User %s has been successfully registered".formatted(chat.getUserName()));
+        Assertions.assertThat(actualResult.getText()).isEqualTo(
+                "User %s has been successfully registered in the MiniBank".formatted(chat.getUserName()));
     }
 
     @Test
-    void handleIfRegisterFail() {
+    void createUserIfUserIsPresent(){
+        UserMock.setupCreateUserResponseIfUserIsPresent(wireMockServer);
+
+        SendMessage actualResult = registerCommandHandler.handle(update);
+
+        Assertions.assertThat(actualResult.getText()).isEqualTo("User already exists in the MiniBank");
+    }
+
+    @Test
+    void createUserResponseFail() {
         UserMock.setupCreateUserResponseFail(wireMockServer);
 
         SendMessage actualResult = registerCommandHandler.handle(update);
 
-        Assertions.assertThat(actualResult.getText()).startsWith("Error");
+        Assertions.assertThat(actualResult.getText()).isEqualTo(
+                "Error << Internal Backend server error when create User >>");
+    }
+
+    @Test
+    void createUserResponseIfNoConnection() {
+        UserMock.setupCreateUserResponseIfNoConnection(wireMockServer);
+
+        SendMessage actualResult = registerCommandHandler.handle(update);
+
+        Assertions.assertThat(actualResult.getText()).startsWith("Middle service unknown or connection error");
+    }
+
+    @Test
+    void createUserResponseIfBackendServerNoConnection() {
+        UserMock.setupCreateUserResponseIfBackendServerNoConnection(wireMockServer);
+
+        SendMessage actualResult = registerCommandHandler.handle(update);
+
+        Assertions.assertThat(actualResult.getText()).isEqualTo(
+                "Error << Backend server unknown or connection error when create user >>");
     }
 }
