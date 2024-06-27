@@ -2,6 +2,7 @@ package gpb.itfactory.shevelatelegrambot.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import gpb.itfactory.shevelatelegrambot.bot.util.ClientManager;
 import gpb.itfactory.shevelatelegrambot.dto.ErrorDto;
 import gpb.itfactory.shevelatelegrambot.dto.UserDto;
 import lombok.extern.slf4j.Slf4j;
@@ -9,27 +10,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.*;
 
 @Slf4j
 @Component
 public class UserService {
 
-    private final String BASE_URL;
-    private final RestTemplate restTemplate;
+    private final ClientManager<RestClient> restClientManager;
 
-    public UserService(@Value("${middle.service.url}")  String baseUrl, RestTemplate restTemplate) {
-        BASE_URL = baseUrl;
-        this.restTemplate = restTemplate;
+    public UserService(ClientManager<RestClient> restClientManager) {
+        this.restClientManager = restClientManager;
     }
 
     public String createUserV2(UserDto userDto) {
         log.info("Create request to MiddleService: < register new user >");
         try {
-            ResponseEntity<String> responseEntity = restTemplate.postForEntity(BASE_URL + "/users", userDto, String.class);
+            ResponseEntity<String> responseEntity = restClientManager.getClient()
+                    .post().uri("/users").body(userDto).retrieve().toEntity(String.class);
             log.info("Receive response from Middle Service: < register new user > %s: ".formatted(responseEntity.getBody()));
             if (responseEntity.getStatusCode() == HttpStatus.NO_CONTENT) {
                 return "User %s has been successfully registered in the MiniBank".formatted(userDto.getUsername());
@@ -51,7 +48,8 @@ public class UserService {
     public String getUserByTelegramIdV2(long tgUserId) {
         log.info("Create request to MiddleService: < get user by userId >");
         try {
-            ResponseEntity<String> responseEntity = restTemplate.getForEntity(BASE_URL + "/users/" + tgUserId, String.class);
+            ResponseEntity<String> responseEntity = restClientManager.getClient()
+                    .get().uri("/users/"  + tgUserId).retrieve().toEntity(String.class);
             log.info("Receive response from Middle Service: < get user by userId > %s: ".formatted(responseEntity.getBody()));
             if (responseEntity.getStatusCode() == HttpStatus.OK) {
                 return "User is registered in the MiniBank";

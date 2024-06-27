@@ -9,7 +9,6 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
 /* Конфигурационный класс для хранения botUsername & botToken */
-@ConditionalOnProperty(value="botConfig", havingValue="production")
 @Configuration
 @ConfigurationProperties(prefix = "bot")
 @Data

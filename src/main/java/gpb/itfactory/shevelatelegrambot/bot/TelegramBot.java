@@ -16,7 +16,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
  * путем наследования от класса org.telegram.telegrambots.bots.TelegramLongPollingBot */
 
 @Slf4j
-@ConditionalOnProperty(value="botConfig", havingValue="production")
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
 

@@ -1,38 +1,40 @@
-package gpb.itfactory.shevelatelegrambot.integration.handler;
+package gpb.itfactory.shevelatelegrambot.integration;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
-import gpb.itfactory.shevelatelegrambot.bot.handler.RegisterCommandHandler;
+import gpb.itfactory.shevelatelegrambot.bot.UpdateDispatcher;
+import gpb.itfactory.shevelatelegrambot.bot.handler.CommandHandler;
+import gpb.itfactory.shevelatelegrambot.bot.handler.UnknownCommandHandler;
 import gpb.itfactory.shevelatelegrambot.integration.mocks.UserMock;
-import gpb.itfactory.shevelatelegrambot.integration.WireMockConfig;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@EnableConfigurationProperties
-@ContextConfiguration(classes = { WireMockConfig.class })
-class RegisterCommandHandlerIT {
+import java.util.List;
 
-    private final WireMockServer wireMockServer;
-    private final RegisterCommandHandler registerCommandHandler;
+@SpringBootTest
+public class UpdateDispatcherRegisterCommandIT {
+
+    private final List<CommandHandler> commandHandlers;
+    private final UnknownCommandHandler unknownCommandHandler;
+
     private Chat chat;
     private Update update;
 
+    private WireMockServer wireMockServer;
+
     @Autowired
-    RegisterCommandHandlerIT(WireMockServer wireMockServer, RegisterCommandHandler registerCommandHandler) {
-        this.wireMockServer = wireMockServer;
-        this.registerCommandHandler = registerCommandHandler;
+    public UpdateDispatcherRegisterCommandIT(List<CommandHandler> commandHandlers,
+                                             UnknownCommandHandler unknownCommandHandler) {
+        this.commandHandlers = commandHandlers;
+        this.unknownCommandHandler = unknownCommandHandler;
     }
 
     @BeforeEach
@@ -47,13 +49,16 @@ class RegisterCommandHandlerIT {
         message.setFrom(user);
         update = new Update();
         update.setMessage(message);
+        wireMockServer = new WireMockServer(8081);
+        wireMockServer.start();
     }
 
     @Test
     void createUserResponseSuccess() {
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
         UserMock.setupCreateUserResponseSuccess(wireMockServer);
 
-        SendMessage actualResult = registerCommandHandler.handle(update);
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
                 "User %s has been successfully registered in the MiniBank".formatted(chat.getUserName()));
@@ -61,18 +66,20 @@ class RegisterCommandHandlerIT {
 
     @Test
     void createUserIfUserIsPresent(){
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
         UserMock.setupCreateUserResponseIfUserIsPresent(wireMockServer);
 
-        SendMessage actualResult = registerCommandHandler.handle(update);
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo("User already exists in the MiniBank");
     }
 
     @Test
     void createUserResponseFail() {
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
         UserMock.setupCreateUserResponseFail(wireMockServer);
 
-        SendMessage actualResult = registerCommandHandler.handle(update);
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
                 "Error << Internal Backend server error when create User >>");
@@ -80,20 +87,28 @@ class RegisterCommandHandlerIT {
 
     @Test
     void createUserResponseIfNoConnection() {
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
         UserMock.setupCreateUserResponseIfNoConnection(wireMockServer);
 
-        SendMessage actualResult = registerCommandHandler.handle(update);
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).startsWith("Middle service unknown or connection error");
     }
 
     @Test
     void createUserResponseIfBackendServerNoConnection() {
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
         UserMock.setupCreateUserResponseIfBackendServerNoConnection(wireMockServer);
 
-        SendMessage actualResult = registerCommandHandler.handle(update);
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
                 "Error << Backend server unknown or connection error when create user >>");
     }
+
+    @AfterEach
+    void cleanUp(){
+        wireMockServer.stop();
+    }
+
 }

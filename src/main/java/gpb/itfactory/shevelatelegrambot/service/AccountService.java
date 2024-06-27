@@ -4,6 +4,7 @@ package gpb.itfactory.shevelatelegrambot.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import gpb.itfactory.shevelatelegrambot.bot.util.ClientManager;
 import gpb.itfactory.shevelatelegrambot.dto.CreateAccountDto;
 import gpb.itfactory.shevelatelegrambot.dto.ErrorDto;
 import gpb.itfactory.shevelatelegrambot.entity.Account;
@@ -12,10 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.*;
 
 import java.util.List;
 
@@ -23,19 +21,18 @@ import java.util.List;
 @Component
 public class AccountService {
 
-    private final String BASE_URL;
-    private final RestTemplate restTemplate;
+    private final ClientManager<RestClient> restClientManager;
 
-    public AccountService(@Value("${middle.service.url}") String baseUrl, RestTemplate restTemplate) {
-        BASE_URL = baseUrl;
-        this.restTemplate = restTemplate;
+    public AccountService(ClientManager<RestClient> restClientManager) {
+        this.restClientManager = restClientManager;
     }
 
     public String createUserAccountV2(Long tgUserId, CreateAccountDto createAccountDto) {
         log.info("Create request to MiddleService: < create account >");
         try {
-            String url = BASE_URL + "/users/" + tgUserId + "/accounts";
-            ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, createAccountDto, String.class);
+            String uri ="/users/" + tgUserId + "/accounts";
+            ResponseEntity<String> responseEntity = restClientManager.getClient()
+                    .post().uri(uri).body(createAccountDto).retrieve().toEntity(String.class);
             log.info("Receive response from Middle Service: < create account >");
             if (responseEntity.getStatusCode() == HttpStatus.NO_CONTENT) {
                 return "Account has been successfully created";
@@ -61,8 +58,9 @@ public class AccountService {
     public String getUserAccountsV2(Long tgUserId) {
         log.info("Create request to MiddleService: < get accounts >");
         try {
-            String url = BASE_URL + "/users/" + tgUserId + "/accounts";
-            ResponseEntity<String> responseEntity = restTemplate.getForEntity(url, String.class);
+            String uri = "/users/" + tgUserId + "/accounts";
+            ResponseEntity<String> responseEntity = restClientManager.getClient()
+                    .get().uri(uri).retrieve().toEntity(String.class);
             log.info("Receive response from Middle Service: < get accounts %s: ".formatted(responseEntity.getBody()));
             if (responseEntity.getStatusCode() == HttpStatus.OK) {
                 return buildSuccessResponseToGetUserAccountsV2(responseEntity);

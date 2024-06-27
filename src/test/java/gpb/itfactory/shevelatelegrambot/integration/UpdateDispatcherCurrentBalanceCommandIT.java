@@ -1,38 +1,39 @@
-package gpb.itfactory.shevelatelegrambot.integration.handler;
+package gpb.itfactory.shevelatelegrambot.integration;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
-import gpb.itfactory.shevelatelegrambot.bot.handler.CurrentBalanceCommandHandler;
-import gpb.itfactory.shevelatelegrambot.integration.WireMockConfig;
+import gpb.itfactory.shevelatelegrambot.bot.UpdateDispatcher;
+import gpb.itfactory.shevelatelegrambot.bot.handler.CommandHandler;
+import gpb.itfactory.shevelatelegrambot.bot.handler.UnknownCommandHandler;
 import gpb.itfactory.shevelatelegrambot.integration.mocks.AccountMock;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@EnableConfigurationProperties
-@ContextConfiguration(classes = { WireMockConfig.class })
-public class CurrentBalanceCommandHandlerIT {
+import java.util.List;
 
-    private final WireMockServer wireMockServer;
-    private final CurrentBalanceCommandHandler currentBalanceCommandHandler;
+@SpringBootTest
+public class UpdateDispatcherCurrentBalanceCommandIT {
+
+    private final List<CommandHandler> commandHandlers;
+    private final UnknownCommandHandler unknownCommandHandler;
+
+    private Chat chat;
     private Update update;
+    private WireMockServer wireMockServer;
 
     @Autowired
-    public CurrentBalanceCommandHandlerIT(WireMockServer wireMockServer,
-                                          CurrentBalanceCommandHandler currentBalanceCommandHandler) {
-        this.wireMockServer = wireMockServer;
-        this.currentBalanceCommandHandler = currentBalanceCommandHandler;
+    public UpdateDispatcherCurrentBalanceCommandIT(List<CommandHandler> commandHandlers,
+                                                   UnknownCommandHandler unknownCommandHandler) {
+        this.commandHandlers = commandHandlers;
+        this.unknownCommandHandler = unknownCommandHandler;
     }
 
     @BeforeEach
@@ -41,19 +42,22 @@ public class CurrentBalanceCommandHandlerIT {
         chat.setUserName("test");
         Message message = new Message();
         message.setChat(chat);
-        message.setText("/register");
+        message.setText("/currentbalance");
         User user = new User();
         user.setId(123456L);
         message.setFrom(user);
         update = new Update();
         update.setMessage(message);
+        wireMockServer = new WireMockServer(8081);
+        wireMockServer.start();
     }
 
     @Test
     void getUserAccountsSuccess() {
         AccountMock.setupGetUserAccountsResponseSuccess(wireMockServer);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
 
-        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).startsWith("User has open account");
     }
@@ -61,8 +65,9 @@ public class CurrentBalanceCommandHandlerIT {
     @Test
     void getUserAccountsIfResponseNoAccounts() {
         AccountMock.setupGetUserAccountsResponseIfNoAccount(wireMockServer);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
 
-        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
                 "Error << User does not have account in the MiniBank >>");
@@ -71,8 +76,9 @@ public class CurrentBalanceCommandHandlerIT {
     @Test
     void getUserAccountsIfResponseUserNotPresent() {
         AccountMock.setupGetUserAccountsResponseIfUserNotPresent(wireMockServer);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
 
-        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo("User is not registered in the MiniBank");
     }
@@ -80,8 +86,9 @@ public class CurrentBalanceCommandHandlerIT {
     @Test
     void getUserAccountsIfGetUserAccountsServerError() {
         AccountMock.setupGetUserAccountsResponseIfServerError(wireMockServer);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
 
-        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
                 "Error << Internal Backend server error when account verification >>");
@@ -90,8 +97,9 @@ public class CurrentBalanceCommandHandlerIT {
     @Test
     void getUserAccountsIfNoConnection() {
         AccountMock.setupGetUserAccountsResponseIfNoConnection(wireMockServer);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
 
-        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).startsWith("Middle service unknown or connection error");
     }
@@ -99,8 +107,9 @@ public class CurrentBalanceCommandHandlerIT {
     @Test
     void getUserAccountIfGetUserAccountsRequestNoConnection() {
         AccountMock.setupGetUserAccountResponseIfGetAccountsResponseNoConnection(wireMockServer);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
 
-        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
                 "Error << Backend server unknown or connection error when account verification >>");
@@ -109,8 +118,9 @@ public class CurrentBalanceCommandHandlerIT {
     @Test
     void getUserAccountIfGetUserRequestServerError() {
         AccountMock.setupGetUserAccountResponseIfGetUserByTelegramIdResponseFail(wireMockServer);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
 
-        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
                 "Error << Internal Backend server error when verifying user registration >>");
@@ -119,11 +129,17 @@ public class CurrentBalanceCommandHandlerIT {
     @Test
     void getUserAccountIfGetUserRequestNoConnection() {
         AccountMock.setupGetUserAccountResponseIfGetUserByTelegramIdRequestNoConnection(wireMockServer);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
 
-        SendMessage actualResult = currentBalanceCommandHandler.handle(update);
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
                 "Error << Backend server unknown or connection error when registration verification >>");
+    }
+
+    @AfterEach
+    void cleanUp(){
+        wireMockServer.stop();
     }
 
 }
