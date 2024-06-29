@@ -45,7 +45,7 @@ public class UserMock {
                 .willReturn(WireMock.aResponse()
                         .withStatus(HttpStatus.BAD_GATEWAY.value())
                         .withBody(createErrorJSON("Backend server unknown" +
-                                " or connection error when create user", "createUserError", "110"))));
+                                " or client error when create user", "createUserError", "110"))));
     }
 
     public static void setupGetUserByTelegramIdResponseIfUserIsPresent(WireMockServer mockService) {
@@ -82,7 +82,7 @@ public class UserMock {
                 .willReturn(WireMock.aResponse()
                         .withStatus(HttpStatus.BAD_GATEWAY.value())
                         .withBody(createErrorJSON("Backend server unknown " +
-                                        "or connection error when registration verification",
+                                        "or client error when registration verification",
                                 "getUserError", "113"))));
     }
 

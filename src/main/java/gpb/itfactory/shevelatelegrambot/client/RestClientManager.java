@@ -1,4 +1,4 @@
-package gpb.itfactory.shevelatelegrambot.bot.util;
+package gpb.itfactory.shevelatelegrambot.client;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

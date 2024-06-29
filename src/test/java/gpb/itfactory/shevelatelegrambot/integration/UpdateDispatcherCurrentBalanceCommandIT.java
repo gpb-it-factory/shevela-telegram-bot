@@ -3,6 +3,7 @@ package gpb.itfactory.shevelatelegrambot.integration;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import gpb.itfactory.shevelatelegrambot.bot.UpdateDispatcher;
 import gpb.itfactory.shevelatelegrambot.bot.handler.CommandHandler;
+import gpb.itfactory.shevelatelegrambot.bot.handler.TransferCommandHandler;
 import gpb.itfactory.shevelatelegrambot.bot.handler.UnknownCommandHandler;
 import gpb.itfactory.shevelatelegrambot.integration.mocks.AccountMock;
 import org.assertj.core.api.Assertions;
@@ -24,6 +25,7 @@ public class UpdateDispatcherCurrentBalanceCommandIT {
 
     private final List<CommandHandler> commandHandlers;
     private final UnknownCommandHandler unknownCommandHandler;
+    private final TransferCommandHandler transferCommandHandler;
 
     private Chat chat;
     private Update update;
@@ -31,9 +33,11 @@ public class UpdateDispatcherCurrentBalanceCommandIT {
 
     @Autowired
     public UpdateDispatcherCurrentBalanceCommandIT(List<CommandHandler> commandHandlers,
-                                                   UnknownCommandHandler unknownCommandHandler) {
+                                                  UnknownCommandHandler unknownCommandHandler,
+                                                  TransferCommandHandler transferCommandHandler) {
         this.commandHandlers = commandHandlers;
         this.unknownCommandHandler = unknownCommandHandler;
+        this.transferCommandHandler = transferCommandHandler;
     }
 
     @BeforeEach
@@ -55,7 +59,7 @@ public class UpdateDispatcherCurrentBalanceCommandIT {
     @Test
     void getUserAccountsSuccess() {
         AccountMock.setupGetUserAccountsResponseSuccess(wireMockServer);
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
@@ -65,7 +69,7 @@ public class UpdateDispatcherCurrentBalanceCommandIT {
     @Test
     void getUserAccountsIfResponseNoAccounts() {
         AccountMock.setupGetUserAccountsResponseIfNoAccount(wireMockServer);
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
@@ -76,7 +80,7 @@ public class UpdateDispatcherCurrentBalanceCommandIT {
     @Test
     void getUserAccountsIfResponseUserNotPresent() {
         AccountMock.setupGetUserAccountsResponseIfUserNotPresent(wireMockServer);
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
@@ -86,7 +90,7 @@ public class UpdateDispatcherCurrentBalanceCommandIT {
     @Test
     void getUserAccountsIfGetUserAccountsServerError() {
         AccountMock.setupGetUserAccountsResponseIfServerError(wireMockServer);
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
@@ -97,28 +101,28 @@ public class UpdateDispatcherCurrentBalanceCommandIT {
     @Test
     void getUserAccountsIfNoConnection() {
         AccountMock.setupGetUserAccountsResponseIfNoConnection(wireMockServer);
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
-        Assertions.assertThat(actualResult.getText()).startsWith("Middle service unknown or connection error");
+        Assertions.assertThat(actualResult.getText()).startsWith("Middle service unknown or client error");
     }
 
     @Test
     void getUserAccountIfGetUserAccountsRequestNoConnection() {
         AccountMock.setupGetUserAccountResponseIfGetAccountsResponseNoConnection(wireMockServer);
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
-                "Error << Backend server unknown or connection error when account verification >>");
+                "Error << Backend server unknown or client error when account verification >>");
     }
 
     @Test
     void getUserAccountIfGetUserRequestServerError() {
         AccountMock.setupGetUserAccountResponseIfGetUserByTelegramIdResponseFail(wireMockServer);
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
@@ -129,12 +133,12 @@ public class UpdateDispatcherCurrentBalanceCommandIT {
     @Test
     void getUserAccountIfGetUserRequestNoConnection() {
         AccountMock.setupGetUserAccountResponseIfGetUserByTelegramIdRequestNoConnection(wireMockServer);
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
-                "Error << Backend server unknown or connection error when registration verification >>");
+                "Error << Backend server unknown or client error when registration verification >>");
     }
 
     @AfterEach

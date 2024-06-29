@@ -2,6 +2,7 @@ package gpb.itfactory.shevelatelegrambot.bot;
 
 
 import gpb.itfactory.shevelatelegrambot.bot.handler.CommandHandler;
+import gpb.itfactory.shevelatelegrambot.bot.handler.TransferCommandHandler;
 import gpb.itfactory.shevelatelegrambot.bot.handler.UnknownCommandHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -18,9 +19,13 @@ public class UpdateDispatcher {
 
     private final List<CommandHandler> commandHandlers;
     private final UnknownCommandHandler unknownCommandHandler;
+    private final TransferCommandHandler transferCommandHandler;
 
     public SendMessage doDispatch(Update update) {
         String command = update.getMessage().getText();
+        if (command.startsWith(transferCommandHandler.getCommand())) {
+            return transferCommandHandler.handle(update);
+        }
         return getHandlerByCommand(command).handle(update);
     }
 
