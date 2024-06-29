@@ -10,4 +10,4 @@ logging:
 
 middle:
   service:
-    url: http://localhost:8081/middle/users
+    url: http://localhost:8081/v2/middle

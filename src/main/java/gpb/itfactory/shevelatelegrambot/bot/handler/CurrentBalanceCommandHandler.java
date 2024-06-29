@@ -1,22 +1,22 @@
 package gpb.itfactory.shevelatelegrambot.bot.handler;
 
-import gpb.itfactory.shevelatelegrambot.service.UserService;
+import gpb.itfactory.shevelatelegrambot.service.AccountService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-/* Обработчик команды /isregister */
+/* Обработчик команды /currentbalance */
 
 @Slf4j
 @Component
-public class IsRegisterCommandHandler implements CommandHandler{
+public class CurrentBalanceCommandHandler implements CommandHandler {
 
-    private static final String COMMAND = "/isregister";
-    private final UserService userService;
+    private static final String COMMAND = "/currentbalance";
+    private final AccountService accountService;
 
-    public IsRegisterCommandHandler(UserService userService) {
-        this.userService = userService;
+    public CurrentBalanceCommandHandler(AccountService accountService) {
+        this.accountService = accountService;
     }
 
     @Override
@@ -32,7 +32,7 @@ public class IsRegisterCommandHandler implements CommandHandler{
     }
 
     private String getAnswer(Update update) {
-        long tgUserId = update.getMessage().getFrom().getId();
-        return userService.getUserByTelegramIdV2(tgUserId);
+        Long tgUserId = update.getMessage().getFrom().getId();
+        return accountService.getUserAccountsV2(tgUserId);
     }
 }

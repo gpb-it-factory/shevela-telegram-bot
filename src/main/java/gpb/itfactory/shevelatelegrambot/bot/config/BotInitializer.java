@@ -3,6 +3,7 @@ package gpb.itfactory.shevelatelegrambot.bot.config;
 import gpb.itfactory.shevelatelegrambot.bot.TelegramBot;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -15,7 +16,7 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class BotInit {
+public class BotInitializer {
     private final TelegramBot telegramBot;
 
     @EventListener({ContextRefreshedEvent.class})

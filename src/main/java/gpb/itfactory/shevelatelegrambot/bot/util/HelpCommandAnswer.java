@@ -7,7 +7,9 @@ public enum HelpCommandAnswer {
     HELP("/help - справка"),
     PING("/ping - тестовая команда (ответ <pong>)"),
     REGISTER("/register - регистрация нового пользователя"),
-    ISREGISTER("/isregister - проверка регистрации пользователя");
+    ISREGISTER("/isregister - проверка регистрации пользователя"),
+    CREATEACCOUNT("/createaccount - открытие счёта в нашем Мини-банке"),
+    CURRENTBALANCE("/currentbalance - получить текущий баланс открытого пользователем счёта");
 
     private String value;
 

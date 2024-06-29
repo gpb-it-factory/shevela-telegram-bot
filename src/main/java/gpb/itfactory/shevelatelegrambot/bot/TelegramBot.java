@@ -4,6 +4,8 @@ package gpb.itfactory.shevelatelegrambot.bot;
 import gpb.itfactory.shevelatelegrambot.bot.config.BotConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -35,9 +37,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         try {
-            execute(buildResponseMessage(update));
-            log.info("Send message: " + buildResponseMessage(update).getText()
-                    + " To chat № " + buildResponseMessage(update).getChatId());
+            SendMessage responseMessage = buildResponseMessage(update);
+            execute(responseMessage);
+            log.info("Send message: " + responseMessage.getText()
+                    + " To chat № " + responseMessage.getChatId());
         } catch (TelegramApiException e) {
             log.error(e.getMessage());
         }
