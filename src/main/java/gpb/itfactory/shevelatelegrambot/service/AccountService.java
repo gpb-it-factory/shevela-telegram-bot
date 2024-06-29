@@ -4,12 +4,11 @@ package gpb.itfactory.shevelatelegrambot.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import gpb.itfactory.shevelatelegrambot.bot.util.ClientManager;
+import gpb.itfactory.shevelatelegrambot.client.ClientManager;
 import gpb.itfactory.shevelatelegrambot.dto.CreateAccountDto;
 import gpb.itfactory.shevelatelegrambot.dto.ErrorDto;
 import gpb.itfactory.shevelatelegrambot.entity.Account;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -39,7 +38,7 @@ public class AccountService {
             } else if (responseEntity.getStatusCode() == HttpStatus.OK) {
                 return "Account is already open. %s".formatted(buildSuccessResponseToGetUserAccountsV2(responseEntity));
             }
-            return responseEntity.getBody();
+            return "Error << Unknown error >>";
         } catch (HttpServerErrorException exception) {
             log.info("Receive response from Middle Service: < create account > >  %s"
                     .formatted(exception.toString()));
@@ -51,7 +50,7 @@ public class AccountService {
         } catch (RestClientException exception) {
             log.info("Receive response from Middle Service: < create account > RestClientException  %s"
                     .formatted(exception.toString()));
-            return "Middle service unknown or connection error: " + exception;
+            return "Middle service unknown or client error: " + exception;
         }
     }
 
@@ -65,7 +64,7 @@ public class AccountService {
             if (responseEntity.getStatusCode() == HttpStatus.OK) {
                 return buildSuccessResponseToGetUserAccountsV2(responseEntity);
             }
-            return responseEntity.getBody();
+            return "Error << Unknown error >>";
         } catch (HttpServerErrorException exception) {
             log.info("Receive response from Middle Service: < get user accounts > >  %s"
                     .formatted(exception.toString()));
@@ -77,7 +76,7 @@ public class AccountService {
         } catch (RestClientException exception) {
             log.info("Receive response from Middle Service: < get user accounts > RestClientException  %s"
                     .formatted(exception.toString()));
-            return "Middle service unknown or connection error: " + exception;
+            return "Middle service unknown or client error: " + exception;
         }
     }
 
@@ -102,11 +101,11 @@ public class AccountService {
             ErrorDto errorDto = mapper.readValue(exception.getResponseBodyAs(String.class), ErrorDto.class);
             return switch (errorDto.getCode()) {
                 case ("103") -> "Error << Internal Backend server error when verifying user registration >>";
-                case ("113") -> "Error << Backend server unknown or connection error when registration verification >>";
+                case ("113") -> "Error << Backend server unknown or client error when registration verification >>";
                 case ("203") -> "Error << Internal Backend server error when account verification >>";
-                case ("213") -> "Error << Backend server unknown or connection error when account verification >>";
+                case ("213") -> "Error << Backend server unknown or client error when account verification >>";
                 case ("200") -> "Error << Internal Backend server error when create account >>";
-                case ("210") -> "Error << Backend server unknown or connection error when create account >>";
+                case ("210") -> "Error << Backend server unknown or client error when create account >>";
                 default -> "Error << Unknown error >>";
             };
         } catch (JsonProcessingException e) {

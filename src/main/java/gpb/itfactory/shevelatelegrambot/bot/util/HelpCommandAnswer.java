@@ -9,7 +9,9 @@ public enum HelpCommandAnswer {
     REGISTER("/register - регистрация нового пользователя"),
     ISREGISTER("/isregister - проверка регистрации пользователя"),
     CREATEACCOUNT("/createaccount - открытие счёта в нашем Мини-банке"),
-    CURRENTBALANCE("/currentbalance - получить текущий баланс открытого пользователем счёта");
+    CURRENTBALANCE("/currentbalance - получить текущий баланс открытого пользователем счёта"),
+    TRANSFER("/transfer toTelegramUser amount - перевод средств со счёта текущего пользователя на другой счёт по имени пользователя." +
+            " toTelegramUser - пользователь, на счёт которого совершается перевод, amount - сумма перевода");
 
     private String value;
 

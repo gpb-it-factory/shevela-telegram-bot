@@ -2,11 +2,10 @@ package gpb.itfactory.shevelatelegrambot.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import gpb.itfactory.shevelatelegrambot.bot.util.ClientManager;
+import gpb.itfactory.shevelatelegrambot.client.ClientManager;
 import gpb.itfactory.shevelatelegrambot.dto.ErrorDto;
 import gpb.itfactory.shevelatelegrambot.dto.UserDto;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -33,7 +32,7 @@ public class UserService {
             } else if (responseEntity.getStatusCode() == HttpStatus.OK) {
                 return "User already exists in the MiniBank";
             }
-            return responseEntity.getBody();
+            return "Error << Unknown error >>";
         } catch (HttpServerErrorException exception) {
             log.info("Receive response from Middle Service: < create user > >  %s"
                     .formatted(exception.toString()));
@@ -41,7 +40,7 @@ public class UserService {
         } catch (RestClientException exception) {
             log.info("Receive response from Middle Service: < create user > RestClientException  %s"
                     .formatted(exception.toString()));
-            return "Middle service unknown or connection error: " + exception;
+            return "Middle service unknown or client error: " + exception;
         }
     }
 
@@ -54,7 +53,7 @@ public class UserService {
             if (responseEntity.getStatusCode() == HttpStatus.OK) {
                 return "User is registered in the MiniBank";
             }
-            return responseEntity.getBody();
+            return "Error << Unknown error >>";
         } catch (HttpServerErrorException exception) {
             log.info("Receive response from Middle Service: < get user by userId > >  %s"
                     .formatted(exception.toString()));
@@ -66,7 +65,7 @@ public class UserService {
         } catch (RestClientException exception) {
             log.info("Receive response from Middle Service: < get user by tgUserId > RestClientException  %s"
                     .formatted(exception.toString()));
-            return "Middle service unknown or connection error: " + exception;
+            return "Middle service unknown or client error: " + exception;
         }
     }
 
@@ -77,8 +76,8 @@ public class UserService {
             return switch (errorDto.getCode()) {
                 case ("103") -> "Error << Internal Backend server error when verifying user registration >>";
                 case ("100") -> "Error << Internal Backend server error when create User >>";
-                case ("113") -> "Error << Backend server unknown or connection error when registration verification >>";
-                case ("110") -> "Error << Backend server unknown or connection error when create user >>";
+                case ("113") -> "Error << Backend server unknown or client error when registration verification >>";
+                case ("110") -> "Error << Backend server unknown or client error when create user >>";
                 default -> "Error << Unknown error >>";
             };
         } catch (JsonProcessingException e) {

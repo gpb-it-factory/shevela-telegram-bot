@@ -1,6 +1,7 @@
 package gpb.itfactory.shevelatelegrambot.bot;
 
 import gpb.itfactory.shevelatelegrambot.bot.handler.CommandHandler;
+import gpb.itfactory.shevelatelegrambot.bot.handler.TransferCommandHandler;
 import gpb.itfactory.shevelatelegrambot.bot.handler.UnknownCommandHandler;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,7 @@ class UpdateDispatcherTest {
 
     private final List<CommandHandler> commandHandlers;
     private final UnknownCommandHandler unknownCommandHandler;
+    private final TransferCommandHandler transferCommandHandler;
 
     Chat chat;
     Message message;
@@ -26,9 +28,10 @@ class UpdateDispatcherTest {
 
     @Autowired
     UpdateDispatcherTest(List<CommandHandler> commandHandlers,
-                         UnknownCommandHandler unknownCommandHandler) {
+                         UnknownCommandHandler unknownCommandHandler, TransferCommandHandler transferCommandHandler) {
         this.commandHandlers = commandHandlers;
         this.unknownCommandHandler = unknownCommandHandler;
+        this.transferCommandHandler = transferCommandHandler;
     }
 
     @BeforeEach
@@ -42,7 +45,7 @@ class UpdateDispatcherTest {
 
     @Test
     void doDispatchIfPingCommand() {
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
         message.setText("/ping");
         update.setMessage(message);
         SendMessage expectedResult = new SendMessage(String.valueOf(123L), "pong");
@@ -54,7 +57,7 @@ class UpdateDispatcherTest {
 
     @Test
     void doDispatchIfStartCommand() {
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
         message.setText("/start");
         update.setMessage(message);
 
@@ -67,7 +70,7 @@ class UpdateDispatcherTest {
 
     @Test
     void doDispatchIfHelpCommand() {
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
         System.out.println(updateDispatcher);
         message.setText("/help");
         update.setMessage(message);
@@ -82,7 +85,7 @@ class UpdateDispatcherTest {
 
     @Test
     void doDispatchIfUnknownCommand() {
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
         System.out.println(updateDispatcher);
         message.setText("/hello");
         update.setMessage(message);

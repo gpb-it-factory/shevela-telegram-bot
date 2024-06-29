@@ -3,6 +3,7 @@ package gpb.itfactory.shevelatelegrambot.integration;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import gpb.itfactory.shevelatelegrambot.bot.UpdateDispatcher;
 import gpb.itfactory.shevelatelegrambot.bot.handler.CommandHandler;
+import gpb.itfactory.shevelatelegrambot.bot.handler.TransferCommandHandler;
 import gpb.itfactory.shevelatelegrambot.bot.handler.UnknownCommandHandler;
 import gpb.itfactory.shevelatelegrambot.integration.mocks.UserMock;
 import org.assertj.core.api.Assertions;
@@ -24,17 +25,19 @@ public class UpdateDispatcherIsRegisterCommandIT {
 
     private final List<CommandHandler> commandHandlers;
     private final UnknownCommandHandler unknownCommandHandler;
+    private final TransferCommandHandler transferCommandHandler;
 
     private Chat chat;
     private Update update;
-
     private WireMockServer wireMockServer;
 
     @Autowired
     public UpdateDispatcherIsRegisterCommandIT(List<CommandHandler> commandHandlers,
-                                               UnknownCommandHandler unknownCommandHandler) {
+                                                   UnknownCommandHandler unknownCommandHandler,
+                                                   TransferCommandHandler transferCommandHandler) {
         this.commandHandlers = commandHandlers;
         this.unknownCommandHandler = unknownCommandHandler;
+        this.transferCommandHandler = transferCommandHandler;
     }
 
     @BeforeEach
@@ -57,7 +60,7 @@ public class UpdateDispatcherIsRegisterCommandIT {
     @Test
     void getUserByTelegramIdIfUserIsPresent() {
         UserMock.setupGetUserByTelegramIdResponseIfUserIsPresent(wireMockServer);
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
@@ -67,7 +70,7 @@ public class UpdateDispatcherIsRegisterCommandIT {
     @Test
     void getUserByTelegramIdIfUserIsNotPresent() {
         UserMock.setupGetUserByTelegramIdResponseIfUserIsNotPresent(wireMockServer);
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
@@ -77,7 +80,7 @@ public class UpdateDispatcherIsRegisterCommandIT {
     @Test
     void getUserByTelegramIdIfServerError() {
         UserMock.setupGetUserByTelegramIdResponseFail(wireMockServer);
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
@@ -88,23 +91,23 @@ public class UpdateDispatcherIsRegisterCommandIT {
     @Test
     void getUserByTelegramIdIfNoConnection() {
         UserMock.setupGetUserByTelegramIdResponseIfNoConnection(wireMockServer);
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
-        Assertions.assertThat(actualResult.getText()).startsWith("Middle service unknown or connection error");
+        Assertions.assertThat(actualResult.getText()).startsWith("Middle service unknown or client error");
     }
 
     @Test
     void getUserByTelegramIdIfBackendServerNoConnection() {
         UserMock.setupGetUserByTelegramIdResponseIfBackendServerNoConnection(wireMockServer);
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText())
                 .isEqualTo("Error << Backend server unknown " +
-                        "or connection error when registration verification >>");
+                        "or client error when registration verification >>");
     }
 
     @AfterEach

@@ -1,11 +1,12 @@
 package gpb.itfactory.shevelatelegrambot.integration;
 
+
 import com.github.tomakehurst.wiremock.WireMockServer;
 import gpb.itfactory.shevelatelegrambot.bot.UpdateDispatcher;
 import gpb.itfactory.shevelatelegrambot.bot.handler.CommandHandler;
 import gpb.itfactory.shevelatelegrambot.bot.handler.TransferCommandHandler;
 import gpb.itfactory.shevelatelegrambot.bot.handler.UnknownCommandHandler;
-import gpb.itfactory.shevelatelegrambot.integration.mocks.AccountMock;
+import gpb.itfactory.shevelatelegrambot.integration.mocks.TransferMock;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +22,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import java.util.List;
 
 @SpringBootTest
-public class UpdateDispatcherCreateAccountCommandIT {
+public class UpdateDispatcherTransferCommandIT {
 
     private final List<CommandHandler> commandHandlers;
     private final UnknownCommandHandler unknownCommandHandler;
@@ -32,9 +33,7 @@ public class UpdateDispatcherCreateAccountCommandIT {
     private WireMockServer wireMockServer;
 
     @Autowired
-    public UpdateDispatcherCreateAccountCommandIT(List<CommandHandler> commandHandlers,
-                                                  UnknownCommandHandler unknownCommandHandler,
-                                                  TransferCommandHandler transferCommandHandler) {
+    public UpdateDispatcherTransferCommandIT(List<CommandHandler> commandHandlers, UnknownCommandHandler unknownCommandHandler, TransferCommandHandler transferCommandHandler) {
         this.commandHandlers = commandHandlers;
         this.unknownCommandHandler = unknownCommandHandler;
         this.transferCommandHandler = transferCommandHandler;
@@ -43,10 +42,10 @@ public class UpdateDispatcherCreateAccountCommandIT {
     @BeforeEach
     void setUp(){
         Chat chat = new Chat(123L, "test");
-        chat.setUserName("test");
+        chat.setUserName("sender");
         Message message = new Message();
         message.setChat(chat);
-        message.setText("/createaccount");
+        message.setText("/transfer recipient 1000");
         User user = new User();
         user.setId(123456L);
         message.setFrom(user);
@@ -58,48 +57,91 @@ public class UpdateDispatcherCreateAccountCommandIT {
 
     @Test
     void createUserAccountSuccess() {
-        AccountMock.setupCreateUserAccountResponseSuccess(wireMockServer);
+        TransferMock.setupCreateTransferResponseSuccess(wireMockServer);
         UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
-        Assertions.assertThat(actualResult.getText()).isEqualTo("Account has been successfully created");
+        Assertions.assertThat(actualResult.getText()).isEqualTo("Transfer has been successfully completed");
     }
 
     @Test
-    void createUserAccountIfAccountIsPresent() {
-        AccountMock.setupCreateUserAccountsV2ResponseIfAccountIsPresent(wireMockServer);
+    void createTransferIfBalanceLessAmount() {
+        TransferMock.setupCreateTransferV2ResponseIfBalanceLessAmount(wireMockServer);
         UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
-        Assertions.assertThat(actualResult.getText()).startsWith("Account is already open");
+        Assertions.assertThat(actualResult.getText()).startsWith("Error << User sender does not have enough money in the account >>");
     }
 
     @Test
-    void createUserAccountIfUserIsNotPresent() {
-        AccountMock.setupCreateUserAccountsV2ResponseIfUserIsNotPresent(wireMockServer);
+    void createTransferIfUserSenderIsNotPresent() {
+        TransferMock.setupCreateTransferV2ResponseIfUserSenderIsNotPresent(wireMockServer);
         UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
-        Assertions.assertThat(actualResult.getText()).isEqualTo("User is not registered in the MiniBank");
+        Assertions.assertThat(actualResult.getText()).isEqualTo("Error << User sender is not registered in the MiniBank >>");
     }
 
     @Test
-    void createUserAccountFail() {
-        AccountMock.setupCreateUserAccountResponseFail(wireMockServer);
+    void createTransferIfUserRecipientIsNotPresent() {
+        TransferMock.setupCreateTransferV2ResponseIfUserRecipientIsNotPresent(wireMockServer);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
+
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
+
+        Assertions.assertThat(actualResult.getText()).isEqualTo("Error << User recipient is not registered in the MiniBank >>");
+    }
+
+
+    @Test
+    void createTransferIfUserSenderAccountIsNotPresent() {
+        TransferMock.setupCreateTransferIfUserSenderAccountIsNotPresent(wireMockServer);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
+
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
+
+        Assertions.assertThat(actualResult.getText()).startsWith("Error << User sender does not have account in the MiniBank >>");
+    }
+
+    @Test
+    void createTransferFail() {
+        TransferMock.setupCreateTransferResponseFail(wireMockServer);
         UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
-                "Error << Internal Backend server error when create account >>");
+                "Error << Internal Backend server error when create transfer >>");
     }
 
     @Test
-    void createUserAccountNoConnection() {
-        AccountMock.setupCreateUserAccountResponseNoConnection(wireMockServer);
+    void createTransferIfBackendServerNoConnection() {
+        TransferMock.setupCreateTransferResponseIfBackendServerNoConnection(wireMockServer);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
+
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
+
+        Assertions.assertThat(actualResult.getText()).isEqualTo(
+                "Error << Backend server unknown or client error when create transfer >>");
+    }
+
+    @Test
+    void createTransferIfAccountToTransferIsNotPresent() {
+        TransferMock.setupCreateTransferResponseIfAccountToTransferIsNotPresent(wireMockServer);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
+
+        SendMessage actualResult = updateDispatcher.doDispatch(update);
+
+        Assertions.assertThat(actualResult.getText()).isEqualTo(
+                "Error << Account for the transfer was not found >>");
+    }
+
+    @Test
+    void createTransferNoConnection() {
+        TransferMock.setupCreateTransferResponseNoConnection(wireMockServer);
         UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
@@ -107,21 +149,9 @@ public class UpdateDispatcherCreateAccountCommandIT {
         Assertions.assertThat(actualResult.getText()).startsWith("Middle service unknown or client error");
     }
 
-
     @Test
-    void createUserAccountIfBackendServerNoConnection() {
-        AccountMock.setupCreateUserAccountResponseIfBackendServerNoConnection(wireMockServer);
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
-
-        SendMessage actualResult = updateDispatcher.doDispatch(update);
-
-        Assertions.assertThat(actualResult.getText()).isEqualTo(
-                "Error << Backend server unknown or client error when create account >>");
-    }
-
-    @Test
-    void createUserAccountIfGetUserRequestServerError() {
-        AccountMock.setupCreateUserAccountResponseIfGetUserByTelegramIdResponseFail(wireMockServer);
+    void createTransferIfGetUserRequestServerError() {
+        TransferMock.setupCreateTransferResponseIfGetUserByTelegramIdResponseFail(wireMockServer);
         UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
@@ -131,36 +161,36 @@ public class UpdateDispatcherCreateAccountCommandIT {
     }
 
     @Test
-    void createUserAccountIfGetUserRequestNoConnection() {
-        AccountMock.setupCreateUserAccountResponseIfGetUserByTelegramIdRequestNoConnection(wireMockServer);
+    void createTransferIfGetUserRequestNoConnection() {
+        TransferMock.setupCreateTransferResponseIfGetUserByTelegramIdRequestNoConnection(wireMockServer);
         UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
-                "Error << Backend server unknown or client error when registration verification >>");
+                "Error << Backend server unknown or client error when users registration verification >>");
     }
 
     @Test
-    void createUserAccountIfGetUserAccountsRequestServerError() {
-        AccountMock.setupCreateUserAccountResponseIfGetAccountsResponseServerError(wireMockServer);
+    void createTransferIfGetUserAccountsRequestServerError() {
+        TransferMock.setupCreateTransferResponseIfGetAccountsResponseServerError(wireMockServer);
         UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
-                "Error << Internal Backend server error when account verification >>");
+                "Error << Internal Backend server error when sender account verification >>");
     }
 
     @Test
-    void createUserAccountIfGetUserAccountsRequestNoConnection() {
-        AccountMock.setupCreateUserAccountResponseIfGetAccountsResponseNoConnection(wireMockServer);
+    void createTransferIfGetUserAccountsRequestNoConnection() {
+        TransferMock.setupCreateTransferResponseIfGetAccountsResponseNoConnection(wireMockServer);
         UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
-                "Error << Backend server unknown or client error when account verification >>");
+                "Error << Backend server unknown or client error when sender account verification >>");
     }
 
     @AfterEach

@@ -53,7 +53,7 @@ public class AccountMock {
                 .willReturn(WireMock.aResponse()
                         .withStatus(HttpStatus.BAD_GATEWAY.value())
                         .withBody(createErrorJSON("Backend server unknown" +
-                                        " or connection error when create account",
+                                        " or client error when create account",
                                 "createUserAccountError", "210"))));
     }
 
@@ -70,7 +70,7 @@ public class AccountMock {
                 .willReturn(WireMock.aResponse()
                         .withStatus(HttpStatus.BAD_GATEWAY.value())
                         .withBody(createErrorJSON("Backend server unknown" +
-                                        " or connection error when registration verification",
+                                        " or client error when registration verification",
                                 "getUserError", "113"))));
     }
 
@@ -87,7 +87,7 @@ public class AccountMock {
                 .willReturn(WireMock.aResponse()
                         .withStatus(HttpStatus.BAD_GATEWAY.value())
                         .withBody(createErrorJSON("Backend server unknown" +
-                                        " or connection error when user accounts verification",
+                                        " or client error when user accounts verification",
                                 "getUserAccountsError", "213"))));
     }
 
@@ -132,7 +132,7 @@ public class AccountMock {
         mockService.stubFor(WireMock.get(WireMock.urlEqualTo("/v2/middle/users/" + USER_ID  + "/accounts"))
                 .willReturn(WireMock.aResponse()
                         .withStatus(HttpStatus.BAD_GATEWAY.value())
-                        .withBody(createErrorJSON("Backend server unknown or connection error" +
+                        .withBody(createErrorJSON("Backend server unknown or client error" +
                                 " when user accounts verification", "getUserAccountsError", "213"))));
     }
 
@@ -148,7 +148,7 @@ public class AccountMock {
         mockService.stubFor(WireMock.get(WireMock.urlEqualTo("/v2/middle/users/" + USER_ID  + "/accounts"))
                 .willReturn(WireMock.aResponse()
                         .withStatus(HttpStatus.BAD_GATEWAY.value())
-                        .withBody(createErrorJSON("Backend server unknown or connection error" +
+                        .withBody(createErrorJSON("Backend server unknown or client error" +
                                 " when registration verification", "getUserError", "113"))));
     }
 

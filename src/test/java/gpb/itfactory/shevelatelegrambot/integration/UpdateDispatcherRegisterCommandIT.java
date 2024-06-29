@@ -3,6 +3,7 @@ package gpb.itfactory.shevelatelegrambot.integration;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import gpb.itfactory.shevelatelegrambot.bot.UpdateDispatcher;
 import gpb.itfactory.shevelatelegrambot.bot.handler.CommandHandler;
+import gpb.itfactory.shevelatelegrambot.bot.handler.TransferCommandHandler;
 import gpb.itfactory.shevelatelegrambot.bot.handler.UnknownCommandHandler;
 import gpb.itfactory.shevelatelegrambot.integration.mocks.UserMock;
 import org.assertj.core.api.Assertions;
@@ -24,17 +25,19 @@ public class UpdateDispatcherRegisterCommandIT {
 
     private final List<CommandHandler> commandHandlers;
     private final UnknownCommandHandler unknownCommandHandler;
+    private final TransferCommandHandler transferCommandHandler;
 
     private Chat chat;
     private Update update;
-
     private WireMockServer wireMockServer;
 
     @Autowired
     public UpdateDispatcherRegisterCommandIT(List<CommandHandler> commandHandlers,
-                                             UnknownCommandHandler unknownCommandHandler) {
+                                               UnknownCommandHandler unknownCommandHandler,
+                                               TransferCommandHandler transferCommandHandler) {
         this.commandHandlers = commandHandlers;
         this.unknownCommandHandler = unknownCommandHandler;
+        this.transferCommandHandler = transferCommandHandler;
     }
 
     @BeforeEach
@@ -55,7 +58,7 @@ public class UpdateDispatcherRegisterCommandIT {
 
     @Test
     void createUserResponseSuccess() {
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
         UserMock.setupCreateUserResponseSuccess(wireMockServer);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
@@ -66,7 +69,7 @@ public class UpdateDispatcherRegisterCommandIT {
 
     @Test
     void createUserIfUserIsPresent(){
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
         UserMock.setupCreateUserResponseIfUserIsPresent(wireMockServer);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
@@ -76,7 +79,7 @@ public class UpdateDispatcherRegisterCommandIT {
 
     @Test
     void createUserResponseFail() {
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
         UserMock.setupCreateUserResponseFail(wireMockServer);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
@@ -87,23 +90,23 @@ public class UpdateDispatcherRegisterCommandIT {
 
     @Test
     void createUserResponseIfNoConnection() {
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
         UserMock.setupCreateUserResponseIfNoConnection(wireMockServer);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
-        Assertions.assertThat(actualResult.getText()).startsWith("Middle service unknown or connection error");
+        Assertions.assertThat(actualResult.getText()).startsWith("Middle service unknown or client error");
     }
 
     @Test
     void createUserResponseIfBackendServerNoConnection() {
-        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler);
+        UpdateDispatcher updateDispatcher = new UpdateDispatcher(commandHandlers, unknownCommandHandler, transferCommandHandler);
         UserMock.setupCreateUserResponseIfBackendServerNoConnection(wireMockServer);
 
         SendMessage actualResult = updateDispatcher.doDispatch(update);
 
         Assertions.assertThat(actualResult.getText()).isEqualTo(
-                "Error << Backend server unknown or connection error when create user >>");
+                "Error << Backend server unknown or client error when create user >>");
     }
 
     @AfterEach
